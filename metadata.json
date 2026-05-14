@@ -1,0 +1,15 @@
+{
+  "name": "TAC Ghana Madina District Eastlegon Assembly",
+  "description": "The official digital portal for TAC Ghana Madina District Eastlegon Assembly, featuring real-time church news, sermon library, event schedules, and ministry management.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "Real-time Chat",
+    "Admin Dashboard",
+    "Media Library",
+    "Member Management"
+  ]
+}

@@ -1,0 +1,226 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Hardened global helpers
+    function isSignedIn() { return request.auth != null; }
+    function userExists() { return exists(/databases/$(database)/documents/users/$(request.auth.uid)); }
+    function getUserData() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+    function getUserRole() { return getUserData().role; }
+    function isAdmin() { return isSignedIn() && userExists() && getUserRole() == 'admin'; }
+    function isPresbytery() { return isSignedIn() && userExists() && getUserRole() == 'presbytery'; }
+    function isStaff() { return isSignedIn() && userExists() && (getUserRole() == 'admin' || getUserRole() == 'presbytery'); }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // Direct Messages
+    match /dms/{dmId} {
+      function isParticipant() {
+        return isSignedIn() && (dmId.split('_')[0] == request.auth.uid || dmId.split('_')[1] == request.auth.uid);
+      }
+      allow read: if isParticipant();
+      allow write: if isParticipant();
+      
+      match /messages/{messageId} {
+        allow read: if isParticipant();
+        allow write: if isParticipant();
+      }
+    }
+
+    // User Profile Rules
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'name', 'email', 'role', 'joinedDate', 'online']) &&
+             data.uid is string && data.name is string && data.name.size() <= 100 &&
+             data.email is string && data.role in ['member', 'presbytery', 'admin'] &&
+             data.joinedDate is string && data.online is bool &&
+             (data.keys().hasAny(['createdAt']) ? (data.createdAt is timestamp || data.createdAt == null) : true) &&
+             (data.keys().hasAny(['phone']) ? (data.phone is string || data.phone == null) : true) &&
+             (data.keys().hasAny(['picUrl']) ? (data.picUrl is string || data.picUrl == null) : true) &&
+             (data.keys().hasAny(['color']) ? (data.color is string || data.color == null) : true) &&
+             (data.keys().hasAny(['teams']) ? (data.teams is map || data.teams == null) : true) &&
+             (data.keys().hasAny(['occupation']) ? (data.occupation is string || data.occupation == null) : true) &&
+             (data.keys().hasAny(['dateOfBirth']) ? (data.dateOfBirth is string || data.dateOfBirth == null) : true) &&
+             (data.keys().hasAny(['userId']) ? (data.userId is string || data.userId == null) : true) &&
+             (data.keys().hasAny(['isProfileComplete']) ? data.isProfileComplete is bool : true) &&
+             (data.keys().hasAny(['chatBg']) ? (data.chatBg is string || data.chatBg == null) : true);
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn(); 
+      allow create: if isOwner(userId) && isValidUser(incoming()); 
+      allow update: if (isOwner(userId) && 
+        incoming().diff(existing()).affectedKeys().hasOnly([
+          'name', 'phone', 'picUrl', 'profileUrl', 'online', 'color', 'teams', 'occupation', 
+          'dateOfBirth', 'userId', 'uid', 'isProfileComplete', 'profileCompleted', 'chatBg', 
+          'email', 'role', 'joinedDate', 'createdAt', 'location', 'localAssembly', 'bio'
+        ]) && (
+          (!incoming().diff(existing()).affectedKeys().hasAny(['role', 'email', 'uid', 'joinedDate', 'createdAt'])) ||
+          (
+            incoming().get('role', existing().role) == existing().role &&
+            incoming().get('email', existing().email) == existing().email &&
+            incoming().get('uid', existing().uid) == existing().uid &&
+            incoming().get('joinedDate', existing().joinedDate) == existing().joinedDate
+          )
+        )
+      ) || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    // notices Rules
+    function isValidNotice(data) {
+      return data.keys().hasAll(['title', 'type', 'body', 'author', 'createdAt']) &&
+             data.title is string && data.title.size() <= 200 &&
+             data.type in ['gen', 'urg', 'pin'] &&
+             data.body is string && data.body.size() <= 5000 &&
+             (data.keys().hasAny(['eventDate']) ? (data.eventDate is string || data.eventDate == null) : true) &&
+             (data.keys().hasAny(['teamId']) ? (data.teamId is string || data.teamId == null) : true);
+    }
+
+    match /notices/{noticeId} {
+      allow list: if isSignedIn();
+      allow get: if isSignedIn() && isValidId(noticeId);
+      allow create: if (isStaff() || (isSignedIn() && incoming().keys().hasAny(['teamId']) && getUserData().teams[incoming().teamId] == 'mentor')) && isValidNotice(incoming());
+      allow update, delete: if isStaff();
+    }
+
+    // Update Requests Rules
+    function isValidUpdateRequest(data) {
+      return data.keys().hasAll(['title', 'body', 'type', 'authorId', 'authorName', 'status', 'createdAt']) &&
+             data.title is string && data.title.size() <= 200 &&
+             data.body is string && data.body.size() <= 10000 &&
+             data.type in ['gen', 'urg', 'pin'] &&
+             data.status in ['pending', 'exported', 'rejected'] &&
+             data.authorId is string && data.authorName is string;
+    }
+
+    match /updateRequests/{requestId} {
+      allow list: if isSignedIn() && (isAdmin() || resource.data.authorId == request.auth.uid);
+      allow get: if isSignedIn() && (isAdmin() || resource.data.authorId == request.auth.uid);
+      allow create: if isStaff() && incoming().authorId == request.auth.uid && isValidUpdateRequest(incoming());
+      allow update: if isAdmin() || (isPresbytery() && existing().authorId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['title', 'body', 'type', 'imgUrl', 'fileUrl']));
+      allow delete: if isStaff() && (isAdmin() || existing().authorId == request.auth.uid);
+    }
+
+    // Settings Rules
+    match /settings/homeConfig {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Events Rules
+    match /events/{eventId} {
+      allow list: if isSignedIn();
+      allow get: if isSignedIn() && isValidId(eventId);
+      allow write, delete: if isStaff();
+    }
+
+    // Sermon Rules
+    match /sermons/{sermonId} {
+      allow list: if isSignedIn();
+      allow get: if isSignedIn() && isValidId(sermonId);
+      allow write, delete: if isStaff();
+    }
+
+    // Global Gallery Rules
+    match /gallery/{itemId} {
+      allow list: if isSignedIn();
+      allow get: if isSignedIn() && isValidId(itemId);
+      allow write, delete: if isStaff();
+    }
+
+    // Global Chat Rules - Standard church chat
+    match /chats/{chatId}/messages/{messageId} {
+      allow list: if isSignedIn();
+      allow get: if isSignedIn() && isValidId(messageId);
+      allow create: if isSignedIn() && incoming().senderId == request.auth.uid;
+      allow delete: if isStaff() || (isSignedIn() && existing().senderId == request.auth.uid);
+    }
+
+    // Prayer Rules
+    match /prayers/{requestId} {
+      allow list: if isSignedIn();
+      allow get: if isSignedIn() && isValidId(requestId);
+      allow write, delete: if isSignedIn();
+    }
+
+    // Team Rules
+    function isTeamMember(teamId) {
+      return isSignedIn() && userExists() && getUserData().teams[teamId] != null;
+    }
+    function isTeamMentor(teamId) {
+      return isSignedIn() && userExists() && getUserData().teams[teamId] == 'mentor';
+    }
+
+    match /teams/{teamId} {
+      allow list: if isSignedIn();
+      allow get: if isSignedIn() && isValidId(teamId);
+      allow create: if isSignedIn(); 
+      allow update: if isSignedIn() && (
+        isAdmin() || 
+        (incoming().diff(existing()).affectedKeys().hasOnly(['members']) && isTeamMember(teamId))
+      );
+      allow delete: if isAdmin();
+
+      match /chat/{messageId} {
+        allow list: if isTeamMember(teamId);
+        allow get: if isTeamMember(teamId) && isValidId(messageId);
+        allow create: if isTeamMember(teamId) && incoming().senderId == request.auth.uid;
+        allow delete: if isTeamMentor(teamId) || (isSignedIn() && existing().senderId == request.auth.uid);
+      }
+
+      match /tasks/{taskId} {
+        allow list: if isTeamMember(teamId);
+        allow get: if isTeamMember(teamId) && isValidId(taskId);
+        allow write, delete: if isTeamMentor(teamId);
+      }
+
+      match /gallery/{itemId} {
+        allow list: if isTeamMember(teamId);
+        allow get: if isTeamMember(teamId) && isValidId(itemId);
+        allow write, delete: if isTeamMentor(teamId);
+      }
+    }
+
+    // Notifications Rules
+    match /notifications/{notificationId} {
+      allow read: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || isStaff());
+      allow create: if isSignedIn();
+      allow update, delete: if isSignedIn() && (resource.data.userId == request.auth.uid || isStaff());
+    }
+
+    // Spiritual Content & Assembly Guidelines
+    match /hymns/{hymnId} {
+      allow list: if isSignedIn();
+      allow get: if isSignedIn() && isValidId(hymnId);
+      allow write, delete: if isStaff();
+    }
+    
+    match /conducts/{conductId} {
+      allow list: if isSignedIn();
+      allow get: if isSignedIn() && isValidId(conductId);
+      allow write, delete: if isStaff();
+    }
+
+    // Emergency Requests Rules
+    function isValidEmergency(data) {
+      return data.keys().hasAll(['userId', 'userName', 'userEmail', 'message', 'status', 'createdAt']) &&
+             data.message is string && data.message.size() <= 2000 &&
+             data.status in ['unread', 'read', 'resolved'] &&
+             data.userId == request.auth.uid &&
+             data.createdAt is timestamp;
+    }
+
+    match /emergencyRequests/{reqId} {
+      allow list: if isAdmin();
+      allow create: if isSignedIn() && isValidEmergency(incoming());
+      allow update, delete: if isAdmin();
+    }
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

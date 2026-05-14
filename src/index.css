@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@theme {
+  --color-tac-red: #C0272D;
+  --color-tac-red-dark: #94191E;
+  --color-tac-blue: #1B3F8B;
+  --color-tac-blue-dark: #0D2660;
+  --color-tac-gold: #D4A017;
+  
+  --font-serif: "Playfair Display", serif;
+  --font-sans: "Inter", sans-serif;
+}
+
+:root {
+  --R: #C0272D; --Rd: #94191E; --Rl: #e03030;
+  --B: #1B3F8B; --Bd: #0D2660; --Bl: #2a54b3;
+  --Gold: #D4A017;
+  --W: #fff; --Off: #F5F7FC; --Gray: #6B7280;
+  --Dark: #0D1B3E; --Bdr: #DDE3F0;
+  --Card: #fff; --Bg: #F5F7FC; --Text: #0D1B3E; --Sub: #6B7280;
+  --SB: #0D1B3E; --Input: #fff; --IBdr: #DDE3F0;
+  --Green: #22c55e; --GreenD: #16a34a;
+  --ChatBg: #e5ddd5; --ChatOut: #dcf8c6; --ChatIn: #fff;
+}
+
+[data-theme="dark"], .dark {
+  --Card: #1E2842; --Bg: #0D1B3E; --Text: #F0F4FF; --Sub: #8FA3C4;
+  --Bdr: #2A3F6B; --Off: #162035; --Input: #1E2842; --IBdr: #2A3F6B;
+  --SB: #111827;
+  --ChatBg: #1a2030; --ChatOut: #1a4d2e; --ChatIn: #2a3a5c;
+}
+
+@layer base {
+  html, body {
+    @apply antialiased overflow-x-hidden w-full;
+  }
+  body {
+    @apply text-tac-blue dark:text-white bg-[var(--Bg)];
+    font-family: var(--font-sans);
+  }
+}
+
+@layer utilities {
+  .watermark {
+    @apply fixed inset-0 pointer-events-none z-[-1] opacity-[0.03] flex items-center justify-center overflow-hidden;
+  }
+  .watermark img {
+    @apply w-[80vw] max-w-[800px] object-contain grayscale brightness-0 invert shadow-none;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply px-4 py-2 rounded-xl bg-tac-red text-white font-bold transition-all active:scale-95 shadow-lg shadow-tac-red/20;
+  }
+  
+  .glass {
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
+  }
+  
+  .card {
+    @apply bg-[var(--Card)] border border-[var(--Bdr)] rounded-2xl p-4 shadow-sm;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 0px;
+  background: transparent;
+}
+

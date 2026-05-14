@@ -1,0 +1,310 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Church member or administrator profile",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["member", "presbytery", "admin"] },
+        "phone": { "type": "string" },
+        "picUrl": { "type": "string" },
+        "color": { "type": "string" },
+        "joinedDate": { "type": "string", "format": "date-time" },
+        "online": { "type": "boolean" },
+        "teams": { "type": "object" }
+      },
+      "required": ["name", "email", "role"]
+    },
+    "Notice": {
+      "title": "Notice",
+      "description": "Church announcement",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "type": { "type": "string", "enum": ["gen", "urg", "pin"] },
+        "body": { "type": "string" },
+        "author": { "type": "string" },
+        "date": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "type", "body", "author"]
+    },
+    "Sermon": {
+      "title": "Sermon",
+      "description": "Recorded sermon or message",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "speaker": { "type": "string" },
+        "date": { "type": "string" },
+        "type": { "type": "string" },
+        "videoUrl": { "type": "string" },
+        "audioUrl": { "type": "string" },
+        "summary": { "type": "string" },
+        "color": { "type": "string" }
+      },
+      "required": ["title", "speaker", "date"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "Church event or activity",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "date": { "type": "string" },
+        "month": { "type": "string" },
+        "detail": { "type": "string" },
+        "location": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "date", "month"]
+    },
+    "Gallery": {
+      "title": "Gallery Item",
+      "description": "Image or video in the church gallery",
+      "type": "object",
+      "properties": {
+        "src": { "type": "string" },
+        "type": { "type": "string", "enum": ["img", "vid"] },
+        "uploadedBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["src", "type"]
+    },
+    "Team": {
+      "title": "Ministry Team",
+      "description": "A church ministry or group",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "icon": { "type": "string" },
+        "color": { "type": "string" },
+        "desc": { "type": "string" },
+        "members": { "type": "number" }
+      },
+      "required": ["name", "icon", "desc"]
+    },
+    "Message": {
+      "title": "Chat Message",
+      "description": "A message in a chat room",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "text": { "type": "string" },
+        "img": { "type": "string" },
+        "vid": { "type": "string" },
+        "time": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "replyTo": { "type": "object" }
+      },
+      "required": ["senderId", "senderName", "createdAt"]
+    },
+    "TeamNotice": {
+      "title": "Team Notice",
+      "description": "Internal team notice",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "author": { "type": "string" },
+        "teamId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "body", "author", "teamId"]
+    },
+    "TeamTask": {
+      "title": "Team Task",
+      "description": "Task assigned to a team member",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "status"]
+    },
+    "Hymn": {
+      "title": "Hymn",
+      "description": "Church hymn data",
+      "type": "object",
+      "properties": {
+        "number": { "type": "integer" },
+        "title": { "type": "string" },
+        "lyrics": { "type": "array" },
+        "chorus": { "type": "string" },
+        "category": { "type": "string" }
+      },
+      "required": ["number", "title", "lyrics"]
+    },
+    "ChurchConduct": {
+      "title": "Church Conduct",
+      "description": "Rules and guidelines",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "points": { "type": "array" },
+        "category": { "type": "string" },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "points", "category"]
+    },
+    "HomeConfig": {
+      "title": "Home Configuration",
+      "description": "Site-wide configuration for the home page",
+      "type": "object",
+      "properties": {
+        "theme": { "type": "string" },
+        "motto": { "type": "string" },
+        "logoUrl": { "type": "string" },
+        "services": { "type": "array" },
+        "announcement": { "type": "string" },
+        "heroUrl": { "type": "string" },
+        "heroSlides": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "PrayerRequest": {
+      "title": "Prayer Request",
+      "description": "A request for prayer",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "text": { "type": "string" },
+        "isPublic": { "type": "boolean" },
+        "status": { "type": "string", "enum": ["pending", "answered", "praying"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "text", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System or user notification",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "type": { "type": "string" },
+        "team": { "type": "string" },
+        "credentials": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "read": { "type": "boolean" }
+      },
+      "required": ["userId", "type", "createdAt"]
+    },
+    "UpdateRequest": {
+      "title": "Update Request",
+      "description": "Request from Presbytery to Admin for posting updates",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "body": { "type": "string" },
+        "type": { "type": "string", "enum": ["gen", "urg", "pin"] },
+        "imgUrl": { "type": "string" },
+        "fileUrl": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "exported", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "body", "type", "authorId", "authorName", "status"]
+    },
+    "EmergencyRequest": {
+      "title": "Emergency Request",
+      "description": "User feedback or emergency issue sent to Admin Review Tab",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "message": { "type": "string" },
+        "status": { "type": "string", "enum": ["unread", "read", "resolved"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "message", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/notices/{noticeId}": {
+      "schema": "Notice",
+      "description": "Church notices"
+    },
+    "/sermons/{sermonId}": {
+      "schema": "Sermon",
+      "description": "Sermon library"
+    },
+    "/events/{eventId}": {
+      "schema": "Event",
+      "description": "Upcoming events"
+    },
+    "/gallery/{itemId}": {
+      "schema": "Gallery",
+      "description": "Media gallery"
+    },
+    "/teams/{teamId}": {
+      "schema": "Team",
+      "description": "Ministry teams"
+    },
+    "/chats/global/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Global church chat messages"
+    },
+    "/teams/{teamId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Team-specific chat messages"
+    },
+    "/chats/emergencyRequests/{reqId}": {
+      "schema": "EmergencyRequest",
+      "description": "Emergency feedback messages"
+    },
+    "/emergencyRequests/{reqId}": {
+      "schema": "EmergencyRequest",
+      "description": "Emergency feedback messages for Admin Review Tab"
+    },
+    "/dms/{dmId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Direct messages"
+    },
+    "/prayers/{requestId}": {
+      "schema": "PrayerRequest",
+      "description": "Prayer requests"
+    },
+    "/teams/{teamId}/chat/{messageId}": {
+      "schema": "Message",
+      "description": "Team internal chat"
+    },
+    "/teams/{teamId}/tasks/{taskId}": {
+      "schema": "TeamTask",
+      "description": "Team tasks"
+    },
+    "/teams/{teamId}/gallery/{itemId}": {
+      "schema": "Gallery",
+      "description": "Team media gallery"
+    },
+    "/settings/homeConfig": {
+      "schema": "HomeConfig",
+      "description": "Home page configuration"
+    },
+    "/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "System notifications"
+    },
+    "/hymns/{hymnId}": {
+      "schema": "Hymn",
+      "description": "Church hymnal"
+    },
+    "/conducts/{conductId}": {
+      "schema": "ChurchConduct",
+      "description": "Rules and protocol"
+    },
+    "/updateRequests/{requestId}": {
+      "schema": "UpdateRequest",
+      "description": "Update requests from Presbytery for Admin review"
+    }
+  }
+}
